@@ -1,0 +1,77 @@
+import { FlatList, StyleSheet, Text, View } from "react-native";
+import { useSelector, useDispatch } from "react-redux";
+import RenderCampsite from "../features/campsites/RenderCampsite";
+import { toggleFavorite } from "../features/favorites/favoritesSlice";
+import { Modal, Button } from "react-native";
+import { useState } from "react";
+import { Rating } from "react-native-ratings";
+const CampsiteInfoScreen = ({ route }) => {
+  const { campsite } = route.params;
+  const comments = useSelector((state) => state.comments);
+  const favorites = useSelector((state) => state.favorites);
+  const dispatch = useDispatch();
+  const [showModal, setShowModal] = useState(false);
+
+  const renderCommentItem = ({ item }) => {
+    return (
+      <View style={styles.commentItem}>
+        <Text style={{ fontSize: 14 }}>{item.text}</Text>
+        <Rating
+          startingValue={item.rating}
+          imageSize={10}
+          style={{ alignItems: "flex-start", paddingVertical: "5%" }}
+          readonly
+        ></Rating>
+        <Text style={{ fontSize: 12 }}>{item.rating} Stars</Text>
+        <Text style={{ fontSize: 12 }}>
+          {`-- ${item.author}, ${item.date}`}
+        </Text>
+      </View>
+    );
+  };
+
+  return (
+    <FlatList
+      data={comments.commentsArray.filter(
+        (comment) => comment.campsiteId === campsite.id
+      )}
+      renderItem={renderCommentItem}
+      keyExtractor={(item) => item.id.toString()}
+      contentContainerStyle={{
+        marginHorizontal: 20,
+        paddingVertical: 20,
+      }}
+      ListHeaderComponent={
+        <>
+          <RenderCampsite
+            campsite={campsite}
+            isFavorite={favorites.includes(campsite.id)}
+            markFavorite={() => dispatch(toggleFavorite(campsite.id))}
+            onShowModal={() => setShowModal(!showModal)}
+            showModal={showModal}
+          />
+          <Text style={styles.commentsTitle}>Comments</Text>
+        </>
+      }
+    />
+  );
+};
+
+const styles = StyleSheet.create({
+  commentsTitle: {
+    textAlign: "center",
+    backgroundColor: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#43484D",
+    padding: 10,
+    paddingTop: 30,
+  },
+  commentItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+  },
+});
+
+export default CampsiteInfoScreen;
