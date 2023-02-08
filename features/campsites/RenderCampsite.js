@@ -1,39 +1,67 @@
-import { Modal, StyleSheet, Text, View, Button, Pressable } from "react-native";
-import { Card, Icon, Input, Rating } from "react-native-elements";
+import { useRef } from "react";
+import { StyleSheet, Text, View, PanResponder, Alert } from "react-native";
+import { Card, Icon } from "react-native-elements";
 import { baseUrl } from "../../shared/baseUrl";
-import { useState } from "react";
-import { useDispatch } from "react-redux";
-import { postComments } from "../comments/commentsSlice";
-//alright, we are doing okay...pick it back up tomorrow.h
+import * as Animatable from "react-native-animatable";
+
+//caching next....need this for web sites as well and make conditional calls....The de;ay when it says I am not signed inu
+//
+// ill be using this in my lught bender app, I will be using it to 
 const RenderCampsite = (props) => {
   const { campsite } = props;
-  const dispatch = useDispatch();
-  const resetForm = () => {
-    const reset = () => {
-      setRating({
-        rating: 5,
-        author: "",
-        text: "",
-      });
-    };
-    reset();
-  };
 
-  const [rating, setRating] = useState({ rating: 5, author: "", text: "" });
+  const view = useRef();
 
-  const handleSubmit = () => {
-    const newComment = {
-      ...rating,
-      campsiteId: campsite.id,
-    };
-    dispatch(postComments(newComment));
-    resetForm();
-    props.onShowModal();
-  };
+  const isLeftSwipe = ({ dx }) => dx < -200;
+
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onPanResponderGrant: () => {
+        // The gesture has started. Show visual feedback so the user knows
+        // what is happening!
+        // gestureState.d{x,y} will be set to zero now
+      view.current
+        .rubberBand(1000)
+        .then((endState) =>
+          console.log(endState.finished ? "finished" : "canceled")
+        );
+    },
+    
+    onPanResponderEnd: (e, gestureState) => {
+      console.log("pan responder end", gestureState);
+      if (isLeftSwipe(gestureState)) {
+        Alert.alert(
+          "Add Favorite",
+          "Are you sure you wish to add " + campsite.name + " to favorites?",
+          [
+            {
+              text: "Cancel",
+              style: "cancel",
+              onPress: () => console.log("Cancel Pressed"),
+            },
+            {
+              text: "OK",
+              onPress: () =>
+                props.isFavorite
+                  ? console.log("Already set as a favorite")
+                  : props.markFavorite(),
+            },
+          ],
+          { cancelable: false }
+        );
+      }
+    },
+  });
 
   if (campsite) {
     return (
-      <>
+      <Animatable.View
+        animation="fadeInDownBig"
+        duration={2000}
+        delay={1000}
+        ref={view}
+        {...panResponder.panHandlers}
+      >
         <Card containerStyle={styles.cardContainer}>
           <Card.Image source={{ uri: baseUrl + campsite.image }}>
             <View style={{ justifyContent: "center", flex: 1 }}>
@@ -55,68 +83,16 @@ const RenderCampsite = (props) => {
               }
             />
             <Icon
-              name={"pencil"}
+              name="pencil"
               type="font-awesome"
               color="#5637DD"
               raised
               reverse
-              onPress={() => props.onShowModal()}
+              onPress={props.onShowModal}
             />
           </View>
         </Card>
-        <Modal visible={props.showModal}>
-          <View style={styles.modal}>
-            <View style={{ margin: 10 }}>
-              <Rating
-                showRating
-                startingValue={5}
-                imageSize={40}
-                onFinishRating={(newRating) =>
-                  setRating({ ...rating, rating: newRating })
-                }
-                style={{ paddingVertical: 10 }}
-                value={rating.rating}
-              />
-              <Input
-                placeholder="Author"
-                leftIcon="user-o"
-                leftIconContainerStyle={{ paddingRight: 10 }}
-                onChangeText={(newAuthor) =>
-                  setRating({ ...rating, author: newAuthor })
-                }
-                value={rating.author}
-              ></Input>
-              <Input
-                placeholder="Comment"
-                leftIcon="comment-o"
-                leftIconContainerStyle={{ paddingRight: 10 }}
-                onChangeText={(newText) =>
-                  setRating({ ...rating, text: newText })
-                }
-                value={rating.text}
-              ></Input>
-              <View style={{ backgroundColor: "#5637DD", margin: 10 }}>
-                <Button
-                  title="Submit"
-                  onPress={() => handleSubmit()}
-                  color="white"
-                />
-              </View>
-              <View style={{ backgroundColor: "#808080", margin: 10 }}>
-                <Button
-                  style={styles.button}
-                  color="white"
-                  onPress={() => {
-                    props.onShowModal();
-                    resetForm();
-                  }}
-                  title="Cancel"
-                ></Button>
-              </View>
-            </View>
-          </View>
-        </Modal>
-      </>
+      </Animatable.View>
     );
   }
   return <View />;
@@ -127,13 +103,6 @@ const styles = StyleSheet.create({
     padding: 0,
     margin: 0,
     marginBottom: 20,
-  },
-  button: {
-    color: "#808080",
-  },
-  modal: {
-    justifyContent: "center",
-    margin: 20,
   },
   cardRow: {
     alignItems: "center",
