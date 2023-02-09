@@ -6,27 +6,28 @@ import * as Animatable from "react-native-animatable";
 
 //caching next....need this for web sites as well and make conditional calls....The de;ay when it says I am not signed inu
 //
-// ill be using this in my lught bender app, I will be using it to 
+// ill be using this in my lught bender app, I will be using it to
 const RenderCampsite = (props) => {
   const { campsite } = props;
 
   const view = useRef();
 
   const isLeftSwipe = ({ dx }) => dx < -200;
+  const isRightSwipe = ({ dx }) => dx > 200;
 
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onPanResponderGrant: () => {
-        // The gesture has started. Show visual feedback so the user knows
-        // what is happening!
-        // gestureState.d{x,y} will be set to zero now
+      // The gesture has started. Show visual feedback so the user knows
+      // what is happening!
+      // gestureState.d{x,y} will be set to zero now
       view.current
         .rubberBand(1000)
         .then((endState) =>
           console.log(endState.finished ? "finished" : "canceled")
         );
     },
-    
+
     onPanResponderEnd: (e, gestureState) => {
       console.log("pan responder end", gestureState);
       if (isLeftSwipe(gestureState)) {
@@ -49,6 +50,8 @@ const RenderCampsite = (props) => {
           ],
           { cancelable: false }
         );
+      } else if (isRightSwipe(gestureState)) {
+        props.onShowModal();
       }
     },
   });
